@@ -753,7 +753,13 @@ impl<T> Stream for Receiver<T> {
     type Error = ();
 
     fn poll(&mut self) -> Poll<Option<T>, ()> {
+        let mut x = 0;
         loop {
+            if x > 0 {
+                println!("UHOH! loop! {}", x);
+            }
+            x = x+1;
+
             // Try to read a message off of the message queue.
             let msg = match self.next_message() {
                 Async::Ready(msg) => msg,
