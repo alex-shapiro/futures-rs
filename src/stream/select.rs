@@ -42,12 +42,14 @@ impl<S1, S2> Stream for Select<S1, S2>
         };
         self.flag = !self.flag;
 
+        println!("polling stream 1");
         let a_done = match try!(a.poll()) {
             Async::Ready(Some(item)) => return Ok(Some(item).into()),
             Async::Ready(None) => true,
             Async::NotReady => false,
         };
 
+        println!("polling stream 2");
         match try!(b.poll()) {
             Async::Ready(Some(item)) => {
                 // If the other stream isn't finished yet, give them a chance to
