@@ -25,6 +25,7 @@ pub fn new<S1, S2>(stream1: S1, stream2: S2) -> Select<S1, S2>
     }
 }
 
+
 impl<S1, S2> Stream for Select<S1, S2>
     where S1: Stream,
           S2: Stream<Item = S1::Item, Error = S1::Error>
@@ -43,15 +44,19 @@ impl<S1, S2> Stream for Select<S1, S2>
         self.flag = !self.flag;
 
         if self.flag { println!("polling stream b") } else { println!("polling stream a") };
-        let a_done = match try!(a.poll()) {
-            Async::Ready(Some(item)) => return Ok(Some(item).into()),
-            Async::Ready(None) => true,
-            Async::NotReady => false,
+        let a_done = match a.poll() {
+            Ok(Async::Ready(Some(item))) => return Ok(Some(item).into()),
+            Ok(Async::Ready(None)) => true,
+            Ok(Async::NotReady) => false,
+            Err(error) => {
+                println!("polling error!");
+                return Err(error)
+            }
         };
 
         if self.flag { println!("polling stream a") } else { println!("polling stream b") };
-        match try!(b.poll()) {
-            Async::Ready(Some(item)) => {
+        match b.poll() {
+            Ok(Async::Ready(Some(item))) => {
                 // If the other stream isn't finished yet, give them a chance to
                 // go first next time as we pulled something off `b`.
                 if !a_done {
@@ -59,8 +64,12 @@ impl<S1, S2> Stream for Select<S1, S2>
                 }
                 Ok(Some(item).into())
             }
-            Async::Ready(None) if a_done => Ok(None.into()),
-            Async::Ready(None) | Async::NotReady => Ok(Async::NotReady),
+            Ok(Async::Ready(None)) if a_done => Ok(None.into()),
+            Ok(Async::Ready(None)) | Ok(Async::NotReady) => Ok(Async::NotReady),
+            Err(error) => {
+                println!("polling error!");
+                return Err(error)
+            }
         }
     }
 }
