@@ -753,6 +753,8 @@ impl<T> Stream for Receiver<T> {
     type Error = ();
 
     fn poll(&mut self) -> Poll<Option<T>, ()> {
+        println!("polling the receiver...");
+
         let mut x = 0;
         loop {
             if x > 0 {
